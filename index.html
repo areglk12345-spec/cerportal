@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 
 <head>
@@ -9,8 +9,37 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: 'var(--accent, #2563eb)',
+                    }
+                }
+            }
         }
     </script>
+    <style>
+        :root {
+            --accent: #2563eb;
+        }
+
+        .bg-brand {
+            background-color: var(--accent);
+        }
+
+        .text-brand {
+            color: var(--accent);
+        }
+
+        .border-brand {
+            border-color: var(--accent);
+        }
+
+        .hover\:bg-brand:hover {
+            background-color: var(--accent);
+            opacity: 0.9;
+        }
+    </style>
     <script>
         // Check local storage or system preference before loading
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -22,6 +51,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 </head>
 
 <body
@@ -37,6 +67,15 @@
             <button onclick="toggleDarkMode()" id="themeToggleBtn"
                 class="text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors duration-200">
                 <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+            <button onclick="openSettingsModal()"
+                class="text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors duration-200"
+                title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button onclick="openQRModal()"
+                class="text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 font-semibold py-2 px-4 rounded-lg transition hidden md:flex items-center border border-indigo-100 dark:border-indigo-800">
+                <i class="fa-solid fa-qrcode mr-2"></i> QR Code
             </button>
             <button onclick="shareProfile()"
                 class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition hidden md:flex items-center">
@@ -69,7 +108,7 @@
             <!-- Dashboard Stats & Chart -->
             <div class="flex flex-col xl:flex-row gap-4 w-full md:w-auto items-stretch">
                 <div
-                    class="grid grid-cols-1 sm:grid-cols-3 gap-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex-grow transition-colors duration-200">
+                    class="grid grid-cols-2 sm:grid-cols-4 gap-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex-grow transition-colors duration-200">
                     <div
                         class="text-center px-4 py-6 sm:border-r border-b sm:border-b-0 border-gray-100 dark:border-gray-700 flex flex-col justify-center">
                         <p class="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1" id="stat-total">0</p>
@@ -83,11 +122,17 @@
                         <p class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Top
                             Issuer</p>
                     </div>
-                    <div class="text-center px-4 py-6 flex flex-col justify-center">
+                    <div
+                        class="text-center px-4 py-6 sm:border-r border-b sm:border-b-0 border-gray-100 dark:border-gray-700 flex flex-col justify-center">
                         <p class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1" id="stat-active-year">-
                         </p>
                         <p class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Top Year
                         </p>
+                    </div>
+                    <div class="text-center px-4 py-6 flex flex-col justify-center">
+                        <p class="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1" id="stat-views">-</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Profile
+                            Views</p>
                     </div>
                 </div>
 
@@ -172,43 +217,43 @@
                 <div class="space-y-4">
                     <div
                         class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border border-blue-100 dark:border-blue-800 transition-colors duration-200">
-                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2"><i
+                        <label class="block text-sm font-bold text-brand dark:text-blue-300 mb-2"><i
                                 class="fa-solid fa-image mr-1"></i>
                             Certificate Image</label>
                         <input type="file" id="certImage" accept="image/*"
-                            class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:transition-colors file:duration-200">
+                            class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand file:text-white hover:file:bg-blue-700 file:transition-colors file:duration-200">
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
                         <input type="text" id="certTitle" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-brand focus:border-brand transition-colors duration-200">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Issuer
                             Organization</label>
                         <input type="text" id="certIssuer" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-brand focus:border-brand transition-colors duration-200">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Issue Date (e.g.
                             Oct 2023)</label>
                         <input type="text" id="certDate" required
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-brand focus:border-brand transition-colors duration-200">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags (comma
                             separated, e.g. IT, Google)</label>
                         <input type="text" id="certTags" placeholder="e.g. IT, Marketing, Cloud"
-                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-brand focus:border-brand transition-colors duration-200">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Certificate File
                             (PDF or Image)</label>
                         <input type="file" id="certDocument" accept=".pdf,image/*" required
-                            class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 dark:file:bg-blue-900/50 dark:file:text-blue-300 hover:file:bg-blue-200 dark:hover:file:bg-blue-900/80 file:transition-colors file:duration-200">
+                            class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-brand dark:file:bg-blue-900/50 dark:file:text-blue-300 hover:file:bg-blue-200 dark:hover:file:bg-blue-900/80 file:transition-colors file:duration-200">
                         <input type="hidden" id="certLink">
-                        <p id="currentDocLink" class="text-xs text-blue-600 dark:text-blue-400 mt-2 hidden"><a href="#"
+                        <p id="currentDocLink" class="text-xs text-brand dark:text-blue-400 mt-2 hidden"><a href="#"
                                 target="_blank" class="hover:underline"><i class="fa-solid fa-link mr-1"></i>View
                                 current uploaded
                                 file</a></p>
@@ -219,7 +264,7 @@
                     <button type="button" onclick="closeModal()"
                         class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">Cancel</button>
                     <button type="submit" id="submitBtn"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">Save
+                        class="px-4 py-2 bg-brand text-white rounded-lg hover:opacity-90 transition-colors duration-200">Save
                         Certificate</button>
                 </div>
             </form>
@@ -334,10 +379,10 @@
         function renderCategoryFilters() {
             const container = document.getElementById('categoryFilters');
             const tags = extractAllTags();
-            let html = `<button onclick="setGlobalFilter('All')" class="flex-shrink-0 category-btn ${activeCategoryFilter === 'All' ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'} px-4 py-1.5 rounded-full text-sm font-medium shadow-sm border whitespace-nowrap transition-colors duration-200" data-category="All">All</button>`;
+            let html = `<button onclick="setGlobalFilter('All')" class="flex-shrink-0 category-btn ${activeCategoryFilter === 'All' ? 'bg-brand text-white border-brand dark:bg-blue-500 dark:border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'} px-4 py-1.5 rounded-full text-sm font-medium shadow-sm border whitespace-nowrap transition-colors duration-200" data-category="All">All</button>`;
             tags.forEach(tag => {
                 const isActive = activeCategoryFilter === tag;
-                html += `<button onclick="setGlobalFilter('${tag}')" class="flex-shrink-0 category-btn ${isActive ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'} px-4 py-1.5 rounded-full text-sm font-medium shadow-sm border whitespace-nowrap transition-colors duration-200" data-category="${tag}">${tag}</button>`;
+                html += `<button onclick="setGlobalFilter('${tag}')" class="flex-shrink-0 category-btn ${isActive ? 'bg-brand text-white border-brand dark:bg-blue-500 dark:border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'} px-4 py-1.5 rounded-full text-sm font-medium shadow-sm border whitespace-nowrap transition-colors duration-200" data-category="${tag}">${tag}</button>`;
             });
             container.innerHTML = html;
         }
@@ -490,9 +535,17 @@
 
             if (certificates && certificates.length > 0) {
                 certificates.forEach(cert => {
-                    const imageHtml = cert.image_url
+                    const isPdf = cert.cert_link && cert.cert_link.toLowerCase().endsWith('.pdf');
+                    let imageHtml = cert.image_url
                         ? `<img src="${cert.image_url}" alt="Certificate Cover" class="h-48 w-full object-cover">`
-                        : `<div class="h-48 bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-file-lines text-5xl text-gray-300"></i></div>`;
+                        : `<div class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"><i class="fa-solid fa-file-lines text-5xl text-gray-300"></i></div>`;
+
+                    if (isPdf && !cert.image_url) {
+                        imageHtml = `<div class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                            <canvas id="pdf-canvas-${cert.id}" class="w-full h-full object-cover"></canvas>
+                            <i id="pdf-icon-${cert.id}" class="fa-solid fa-file-pdf text-5xl text-red-500 absolute"></i>
+                        </div>`;
+                    }
 
                     let tagsHtml = '';
                     if (cert.tags) {
@@ -500,7 +553,7 @@
                         if (tagArray.length > 0) {
                             tagsHtml = `<div class="flex flex-wrap gap-1 mb-3 mt-1">`;
                             tagArray.forEach(tag => {
-                                tagsHtml += `<span class="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide cursor-pointer hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900 dark:hover:text-blue-300 transition-colors duration-200" onclick="setGlobalFilter('${tag}'); window.scrollTo({top:0,behavior:'smooth'});">${tag}</span>`;
+                                tagsHtml += `<span class="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide cursor-pointer hover:bg-blue-100 hover:text-brand dark:hover:bg-blue-900 dark:hover:text-blue-300 transition-colors duration-200" onclick="setGlobalFilter('${tag}'); window.scrollTo({top:0,behavior:'smooth'});">${tag}</span>`;
                             });
                             tagsHtml += `</div>`;
                         }
@@ -512,12 +565,12 @@
                         <div class="p-6 flex flex-col flex-grow">
                             ${tagsHtml}
                             <h2 class="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-1 line-clamp-2">${cert.title}</h2>
-                            <p class="text-blue-600 dark:text-blue-400 font-medium text-sm mb-3">${cert.issuer}</p>
+                            <p class="text-brand dark:text-blue-400 font-medium text-sm mb-3">${cert.issuer}</p>
                             <p class="text-gray-500 dark:text-gray-400 text-xs flex items-center mb-6">
                                 <i class="fa-regular fa-calendar mr-2"></i> Issued: ${cert.issue_date}
                             </p>
                             <div class="mt-auto flex space-x-2">
-                                <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200">
+                                <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-brand hover:opacity-90 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200">
                                     <i class="fa-regular fa-eye mr-2"></i> View
                                 </a>
                                 <button onclick="openEditModal(${cert.id})" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 dark:text-yellow-400 font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200" title="แก้ไขใบรับรอง">
@@ -535,14 +588,31 @@
             htmlContent += `
             <div class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-transparent flex flex-col items-center justify-center p-8 text-center min-h-[400px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200" onclick="openModal()">
                 <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-full mb-4">
-                    <i class="fa-solid fa-plus text-3xl text-blue-600 dark:text-blue-400"></i>
+                    <i class="fa-solid fa-plus text-3xl text-brand"></i>
                 </div>
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Add New Certificate</h3>
                 <p class="text-gray-500 dark:text-gray-400 text-sm">Upload a new document to your portal.</p>
             </div>`;
 
             grid.innerHTML = htmlContent;
+
+            // Render PDF Thumbnails
+            if (certificates) {
+                certificates.forEach(cert => {
+                    const isPdf = cert.cert_link && cert.cert_link.toLowerCase().endsWith('.pdf');
+                    if (isPdf && !cert.image_url) {
+                        const canvas = document.getElementById(`pdf-canvas-${cert.id}`);
+                        const icon = document.getElementById(`pdf-icon-${cert.id}`);
+                        if (canvas) {
+                            renderPDFThumbnail(cert.cert_link, canvas).then(() => {
+                                if (icon) icon.classList.add('hidden');
+                            });
+                        }
+                    }
+                });
+            }
         }
+
 
         function openModal() {
             currentEditId = null;
@@ -689,7 +759,117 @@
 
         // INITIALIZE APP BY CHECKING SESSION FIRST
         checkAdminSession();
+
+        // -------- QR CODE --------
+        function openQRModal() {
+            const profileUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'profile.html';
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(profileUrl)}&bgcolor=ffffff&color=1e3a5f&margin=10`;
+            document.getElementById('qrImage').src = qrUrl;
+            document.getElementById('qrDownloadBtn').href = qrUrl;
+            document.getElementById('qrProfileUrl').textContent = profileUrl;
+            document.getElementById('qrModal').classList.remove('hidden');
+        }
+        function closeQRModal() { document.getElementById('qrModal').classList.add('hidden'); }
+
+        // -------- SETTINGS / THEME --------
+        const ACCENT_COLORS = [
+            { name: 'Blue', value: '#2563eb' },
+            { name: 'Indigo', value: '#4f46e5' },
+            { name: 'Purple', value: '#7c3aed' },
+            { name: 'Rose', value: '#e11d48' },
+            { name: 'Teal', value: '#0d9488' },
+            { name: 'Emerald', value: '#059669' },
+        ];
+        function openSettingsModal() { renderColorSwatches(); document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
+        function renderColorSwatches() {
+            const container = document.getElementById('colorSwatches');
+            const current = localStorage.getItem('cerportal_accent') || '#2563eb';
+            container.innerHTML = ACCENT_COLORS.map(c => `
+                <button onclick="setAccentColor('${c.value}')" title="${c.name}"
+                    class="w-9 h-9 rounded-full border-4 transition-transform hover:scale-110 ${current === c.value ? 'border-gray-400 scale-110' : 'border-transparent'}"
+                    style="background-color:${c.value}"></button>`).join('');
+        }
+        function setAccentColor(color) { localStorage.setItem('cerportal_accent', color); applyAccentColor(color); renderColorSwatches(); }
+        function applyAccentColor(color) { document.documentElement.style.setProperty('--accent', color); }
+        (function () { const s = localStorage.getItem('cerportal_accent'); if (s) applyAccentColor(s); })();
+
+        // -------- ANALYTICS --------
+        async function fetchProfileViews() {
+            try {
+                const { count, error } = await supabaseClient.from('profile_views').select('*', { count: 'exact', head: true });
+                if (error) throw error;
+                const el = document.getElementById('stat-views');
+                if (el) el.innerText = count ?? '-';
+            } catch (e) { console.warn('profile_views table not set up:', e.message); }
+        }
+        fetchProfileViews();
+
+        // -------- PDF PREVIEW --------
+        async function renderPDFThumbnail(pdfUrl, canvas) {
+            if (!window.pdfjsLib) return;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+            try {
+                const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 0.5 });
+                canvas.width = viewport.width; canvas.height = viewport.height;
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            } catch (e) { console.warn('PDF preview failed:', e); }
+        }
     </script>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal"
+        class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 hidden flex items-center justify-center z-50">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-sm text-center border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Share Profile via QR</h2>
+                <button onclick="closeQRModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i
+                        class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="flex justify-center mb-4">
+                <img id="qrImage" src="" alt="QR Code"
+                    class="w-56 h-56 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
+            </div>
+            <p id="qrProfileUrl" class="text-xs text-gray-400 break-all mb-5"></p>
+            <a id="qrDownloadBtn" href="" download="CerPortal_QR.png"
+                class="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200">
+                <i class="fa-solid fa-download mr-2"></i> Download QR Code
+            </a>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal"
+        class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 hidden flex items-center justify-center z-50">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-sm border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Settings</h2>
+                <button onclick="closeSettingsModal()"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i
+                        class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Accent Color</p>
+            <div id="colorSwatches" class="flex gap-3 flex-wrap mb-5"></div>
+            <hr class="border-gray-100 dark:border-gray-700 mb-4">
+            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Dark Mode</p>
+            <button onclick="toggleDarkMode(); renderColorSwatches();"
+                class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-2.5 rounded-xl transition-colors duration-200 mb-5">
+                Toggle Dark / Light
+            </button>
+            <hr class="border-gray-100 dark:border-gray-700 mb-4">
+            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Enable Profile View Analytics</p>
+            <p class="text-xs text-gray-400 mb-2">Run in Supabase SQL Editor:</p>
+            <pre class="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-xs text-left text-gray-600 dark:text-gray-300">CREATE TABLE profile_views (
+  id serial primary key,
+  viewed_at timestamptz default now()
+);</pre>
+        </div>
+    </div>
+
 </body>
 
 </html>

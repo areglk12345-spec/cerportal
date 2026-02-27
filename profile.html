@@ -9,8 +9,37 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: 'var(--accent, #2563eb)',
+                    }
+                }
+            }
         }
     </script>
+    <style>
+        :root {
+            --accent: #2563eb;
+        }
+
+        .bg-brand {
+            background-color: var(--accent);
+        }
+
+        .text-brand {
+            color: var(--accent);
+        }
+
+        .border-brand {
+            border-color: var(--accent);
+        }
+
+        .hover\:bg-brand:hover {
+            background-color: var(--accent);
+            opacity: 0.9;
+        }
+    </style>
     <script>
         // Check local storage or system preference before loading
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -351,7 +380,7 @@
                         if (tagArray.length > 0) {
                             tagsHtml = `<div class="flex flex-wrap gap-1 mb-3 mt-1">`;
                             tagArray.forEach(tag => {
-                                tagsHtml += `<span class="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide cursor-pointer hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900 dark:hover:text-blue-300 transition-colors duration-200" onclick="setGlobalFilter('${tag}'); window.scrollTo({top:0,behavior:'smooth'});">${tag}</span>`;
+                                tagsHtml += `<span class="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide cursor-pointer hover:bg-blue-100 hover:text-brand dark:hover:bg-blue-900 dark:hover:text-blue-300 transition-colors duration-200" onclick="setGlobalFilter('${tag}'); window.scrollTo({top:0,behavior:'smooth'});">${tag}</span>`;
                             });
                             tagsHtml += `</div>`;
                         }
@@ -368,7 +397,7 @@
                                 <i class="fa-regular fa-calendar mr-2"></i> Issued: ${cert.issue_date}
                             </p>
                             <div class="mt-auto flex space-x-2">
-                                <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-600 text-blue-600 dark:text-blue-400 dark:hover:text-white hover:text-white font-semibold py-2.5 rounded-lg transition-colors duration-200 border border-blue-100 dark:border-blue-800 hover:border-blue-600 dark:hover:border-blue-600">
+                                <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-brand hover:opacity-90 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200">
                                     <i class="fa-regular fa-eye mr-2"></i> View Certificate
                                 </a>
                             </div>
@@ -381,6 +410,24 @@
 
             grid.innerHTML = htmlContent;
         }
+
+        async function logPageView() {
+            try {
+                const { error } = await supabaseClient
+                    .from('profile_views')
+                    .insert([{ viewed_at: new Date().toISOString() }]);
+                if (error) throw error;
+            } catch (e) {
+                console.warn('Analytics logging failed:', e.message);
+            }
+        }
+        logPageView();
+
+        // Apply accent on load
+        (function () {
+            const saved = localStorage.getItem('cerportal_accent');
+            if (saved) document.documentElement.style.setProperty('--accent', saved);
+        })();
 
         fetchCertificates();
     </script>
