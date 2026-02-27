@@ -6,22 +6,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Certificates - CerPortal</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script>
+        // Check local storage or system preference before loading
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col relative">
+<body
+    class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col relative dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200">
 
-    <header class="bg-white border-b border-gray-200 py-4 px-6 md:px-12 flex items-center justify-between">
-        <div class="flex items-center text-blue-600 font-bold text-xl">
+    <header
+        class="bg-white border-b border-gray-200 py-4 px-6 md:px-12 flex items-center justify-between dark:bg-gray-800 dark:border-gray-700 transition-colors duration-200">
+        <div class="flex items-center text-blue-600 font-bold text-xl dark:text-blue-400">
             <i class="fa-solid fa-shield-halved mr-2"></i>
-            <span class="text-gray-900">CerPortal</span>
+            <span class="text-gray-900 dark:text-white">CerPortal</span>
         </div>
         <div class="flex items-center space-x-4">
-            <div class="flex items-center border-l pl-4 border-gray-300">
+            <button onclick="toggleDarkMode()" id="themeToggleBtn"
+                class="text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors duration-200">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+            <button onclick="shareProfile()"
+                class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition hidden md:flex items-center">
+                <i class="fa-solid fa-share-nodes mr-2"></i> Share Public Profile
+            </button>
+            <button onclick="logoutAdmin()"
+                class="text-sm bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 px-4 rounded-lg transition border border-red-100 hidden md:flex items-center">
+                <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i> Logout
+            </button>
+            <div class="flex items-center border-l pl-4 border-gray-300 dark:border-gray-600">
                 <div class="text-right mr-3 hidden md:block">
-                    <p class="text-sm font-semibold text-gray-900">Alex Morgan</p>
-                    <p class="text-xs text-gray-500">Professional Plan</p>
+                    <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">Alex Morgan</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
                 </div>
                 <img src="https://ui-avatars.com/api/?name=Alex+Morgan&background=E8C8A0&color=fff" alt="Profile"
                     class="w-10 h-10 rounded-full border">
@@ -31,23 +59,96 @@
 
     <main class="flex-grow max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
 
-        <div class="mb-8">
-            <h1 class="text-4xl font-extrabold text-gray-900 mb-2">My Certificates</h1>
-            <p class="text-gray-500 text-lg">Manage, verify, and share your earned professional credentials.</p>
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">My Certificates</h1>
+                <p class="text-gray-500 dark:text-gray-400 text-lg">Manage, verify, and share your earned professional
+                    credentials.</p>
+            </div>
+
+            <!-- Dashboard Stats & Chart -->
+            <div class="flex flex-col xl:flex-row gap-4 w-full md:w-auto items-stretch">
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-3 gap-0 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex-grow transition-colors duration-200">
+                    <div
+                        class="text-center px-4 py-6 sm:border-r border-b sm:border-b-0 border-gray-100 dark:border-gray-700 flex flex-col justify-center">
+                        <p class="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1" id="stat-total">0</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Total
+                            Certs</p>
+                    </div>
+                    <div class="text-center px-4 py-6 sm:border-r border-b sm:border-b-0 border-gray-100 dark:border-gray-700 flex flex-col justify-center cursor-help"
+                        title="" id="stat-top-issuer-container">
+                        <p class="text-xl font-bold text-gray-800 dark:text-gray-100 line-clamp-1 mb-1"
+                            id="stat-top-issuer">-</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Top
+                            Issuer</p>
+                    </div>
+                    <div class="text-center px-4 py-6 flex flex-col justify-center">
+                        <p class="text-3xl font-bold text-green-600 dark:text-green-400 mb-1" id="stat-active-year">-
+                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Top Year
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Radar Chart Container -->
+                <div
+                    class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 w-full xl:w-64 flex-shrink-0 flex flex-col items-center justify-center transition-colors duration-200">
+                    <h3
+                        class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 text-center w-full">
+                        Skill Radar</h3>
+                    <div class="relative w-full aspect-square max-w-[180px]">
+                        <canvas id="skillsRadarChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-4 mb-6">
-            <div class="relative flex-grow">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+        <div class="flex flex-col gap-4 mb-6">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                    </div>
+                    <input type="text" id="searchInput" oninput="filterCertificates()"
+                        placeholder="Search by title, tags, or organization..."
+                        class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200">
                 </div>
-                <input type="text" placeholder="Search by title, organization, or skill..."
-                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+
+                <div class="flex shrink-0 gap-2">
+                    <!-- Sort Dropdown -->
+                    <div class="relative">
+                        <select id="sortSelect" onchange="filterCertificates()"
+                            class="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 py-3 pl-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium cursor-pointer h-full transition-colors duration-200">
+                            <option value="newest">Sort: Default (Newest)</option>
+                            <option value="oldest">Sort: Oldest</option>
+                            <option value="name_asc">Sort: Name (A-Z)</option>
+                            <option value="name_desc">Sort: Name (Z-A)</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                            <i class="fa-solid fa-chevron-down text-sm"></i>
+                        </div>
+                    </div>
+
+                    <!-- Export Button -->
+                    <button onclick="exportToCSV()"
+                        class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 dark:text-emerald-400 font-semibold py-3 px-4 rounded-lg flex items-center justify-center transition border border-emerald-200 dark:border-emerald-800"
+                        title="Export to CSV">
+                        <i class="fa-solid fa-file-csv"></i><span class="ml-2 hidden sm:inline">Export</span>
+                    </button>
+
+                    <button onclick="openModal()"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold flex-shrink-0 py-3 px-6 rounded-lg flex items-center justify-center transition whitespace-nowrap">
+                        <i class="fa-solid fa-plus mr-2"></i> Add New
+                    </button>
+                </div>
             </div>
-            <button onclick="openModal()"
-                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center transition">
-                <i class="fa-solid fa-plus mr-2"></i> Add New
-            </button>
+
+            <!-- Filter Chips -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide" id="categoryFilters">
+                <!-- Dynamic categories will be injected here -->
+            </div>
         </div>
 
         <div id="cert-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -55,51 +156,70 @@
         </div>
     </main>
 
-    <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div id="addModal"
+        class="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 hidden flex items-center justify-center z-50 transition-opacity duration-300">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 w-full max-w-md max-h-[90vh] overflow-y-auto transition-colors duration-200 border border-gray-100 dark:border-gray-700">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Add New Certificate</h2>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                <h2 id="modalTitle" class="text-2xl font-bold text-gray-900 dark:text-white">Add New Certificate</h2>
+                <button onclick="closeModal()"
+                    class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
 
             <form id="addCertForm" onsubmit="submitForm(event)">
                 <div class="space-y-4">
-                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                        <label class="block text-sm font-bold text-blue-800 mb-2"><i class="fa-solid fa-image mr-1"></i>
+                    <div
+                        class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border border-blue-100 dark:border-blue-800 transition-colors duration-200">
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2"><i
+                                class="fa-solid fa-image mr-1"></i>
                             Certificate Image</label>
                         <input type="file" id="certImage" accept="image/*"
-                            class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                            class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:transition-colors file:duration-200">
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
                         <input type="text" id="certTitle" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Issuer Organization</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Issuer
+                            Organization</label>
                         <input type="text" id="certIssuer" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Issue Date (e.g. Oct 2023)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Issue Date (e.g.
+                            Oct 2023)</label>
                         <input type="text" id="certDate" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Certificate Link (URL)</label>
-                        <input type="url" id="certLink" required
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags (comma
+                            separated, e.g. IT, Google)</label>
+                        <input type="text" id="certTags" placeholder="e.g. IT, Marketing, Cloud"
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Certificate File
+                            (PDF or Image)</label>
+                        <input type="file" id="certDocument" accept=".pdf,image/*" required
+                            class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 dark:file:bg-blue-900/50 dark:file:text-blue-300 hover:file:bg-blue-200 dark:hover:file:bg-blue-900/80 file:transition-colors file:duration-200">
+                        <input type="hidden" id="certLink">
+                        <p id="currentDocLink" class="text-xs text-blue-600 dark:text-blue-400 mt-2 hidden"><a href="#"
+                                target="_blank" class="hover:underline"><i class="fa-solid fa-link mr-1"></i>View
+                                current uploaded
+                                file</a></p>
                     </div>
                 </div>
 
                 <div class="mt-8 flex justify-end space-x-3">
                     <button type="button" onclick="closeModal()"
-                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">Cancel</button>
                     <button type="submit" id="submitBtn"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Save
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">Save
                         Certificate</button>
                 </div>
             </form>
@@ -110,6 +230,78 @@
         const SUPABASE_URL = 'https://hiibnbclvdqnswzrwwso.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_VUvtgjER7-DI65bA7te5cg_V0gwnSBC';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let allCertificates = [];
+        let currentEditId = null;
+        let activeCategoryFilter = 'All';
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.getElementById('themeIcon');
+            if (document.documentElement.classList.contains('dark')) {
+                if (icon) {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                }
+            }
+        });
+
+        // ---------------- AUTHENTICATION CHECKS ----------------
+        async function checkAdminSession() {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (error || !session) {
+                // If not logged in, boot to login page immediately
+                window.location.href = 'login.html';
+                return;
+            }
+            // If logged in, proceed to fetch data
+            fetchCertificates();
+        }
+
+        async function logoutAdmin() {
+            try {
+                const { error } = await supabaseClient.auth.signOut();
+                if (error) throw error;
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error.message);
+                alert('เกิดข้อผิดพลาดในการออกจากระบบ: ' + error.message);
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300 flex items-center';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-green-400 mr-2"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function shareProfile() {
+            const profileUrl = window.location.origin + window.location.pathname.replace('index.html', '') + 'profile.html';
+            navigator.clipboard.writeText(profileUrl).then(() => {
+                showToast('Profile link copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy link: ', err);
+            });
+        }
 
         async function fetchCertificates() {
             try {
@@ -118,11 +310,178 @@
                     .select('*')
                     .order('id', { ascending: true });
                 if (error) throw error;
-                renderCertificates(data);
+                allCertificates = data;
+                filterCertificates();
             } catch (error) {
                 console.error('เกิดข้อผิดพลาด:', error.message);
                 document.getElementById('cert-grid').innerHTML = `<p class="text-red-500 text-center col-span-full">ไม่สามารถโหลดข้อมูลได้</p>`;
             }
+        }
+
+        function extractAllTags() {
+            const tagsSet = new Set();
+            allCertificates.forEach(cert => {
+                if (cert.tags) {
+                    cert.tags.split(',').forEach(tag => {
+                        const t = tag.trim();
+                        if (t) tagsSet.add(t);
+                    });
+                }
+            });
+            return Array.from(tagsSet).sort();
+        }
+
+        function renderCategoryFilters() {
+            const container = document.getElementById('categoryFilters');
+            const tags = extractAllTags();
+            let html = `<button onclick="setGlobalFilter('All')" class="flex-shrink-0 category-btn ${activeCategoryFilter === 'All' ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'} px-4 py-1.5 rounded-full text-sm font-medium shadow-sm border whitespace-nowrap transition-colors duration-200" data-category="All">All</button>`;
+            tags.forEach(tag => {
+                const isActive = activeCategoryFilter === tag;
+                html += `<button onclick="setGlobalFilter('${tag}')" class="flex-shrink-0 category-btn ${isActive ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'} px-4 py-1.5 rounded-full text-sm font-medium shadow-sm border whitespace-nowrap transition-colors duration-200" data-category="${tag}">${tag}</button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function setGlobalFilter(category) {
+            activeCategoryFilter = category;
+            renderCategoryFilters();
+            filterCertificates();
+        }
+
+        function updateDashboard() {
+            if (!allCertificates || allCertificates.length === 0) return;
+            document.getElementById('stat-total').innerText = allCertificates.length;
+
+            const issuerCounts = {};
+            const yearCounts = {};
+
+            allCertificates.forEach(cert => {
+                if (cert.issuer) issuerCounts[cert.issuer] = (issuerCounts[cert.issuer] || 0) + 1;
+                if (cert.issue_date) {
+                    const yearMatch = cert.issue_date.match(/\d{4}/);
+                    if (yearMatch) {
+                        const year = yearMatch[0];
+                        yearCounts[year] = (yearCounts[year] || 0) + 1;
+                    }
+                }
+            });
+
+            let topIssuer = '-';
+            let maxIssuerCount = 0;
+            for (const [issuer, count] of Object.entries(issuerCounts)) {
+                if (count > maxIssuerCount) {
+                    topIssuer = issuer;
+                    maxIssuerCount = count;
+                }
+            }
+
+            const issuerEl = document.getElementById('stat-top-issuer');
+            issuerEl.innerText = topIssuer;
+            if (topIssuer !== '-') document.getElementById('stat-top-issuer-container').title = `${topIssuer} (${maxIssuerCount} certs)`;
+
+            let topYear = '-';
+            let maxYearCount = 0;
+            for (const [year, count] of Object.entries(yearCounts)) {
+                if (count > maxYearCount) {
+                    topYear = year;
+                    maxYearCount = count;
+                }
+            }
+            document.getElementById('stat-active-year').innerText = topYear;
+        }
+
+        let skillsChartInstance = null;
+
+        function renderRadarChart() {
+            if (!currentFilteredCertificates || currentFilteredCertificates.length === 0) return;
+            const tagCounts = {};
+            currentFilteredCertificates.forEach(cert => {
+                if (cert.tags) {
+                    cert.tags.split(',').forEach(tag => {
+                        const t = tag.trim().toUpperCase();
+                        if (t) tagCounts[t] = (tagCounts[t] || 0) + 1;
+                    });
+                }
+            });
+            const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            if (sortedTags.length < 3) { if (skillsChartInstance) skillsChartInstance.destroy(); return; }
+            const labels = sortedTags.map(t => t[0]);
+            const dataCounts = sortedTags.map(t => t[1]);
+            const ctx = document.getElementById('skillsRadarChart').getContext('2d');
+            if (skillsChartInstance) skillsChartInstance.destroy();
+            skillsChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: { labels, datasets: [{ label: 'Certificates', data: dataCounts, backgroundColor: 'rgba(37,99,235,0.2)', borderColor: 'rgba(37,99,235,1)', pointBackgroundColor: 'rgba(37,99,235,1)', pointBorderColor: '#fff', pointHoverBackgroundColor: '#fff', pointHoverBorderColor: 'rgba(37,99,235,1)', borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: 'rgba(0,0,0,0.05)' }, grid: { color: 'rgba(0,0,0,0.05)' }, pointLabels: { font: { size: 9, family: "'Inter',sans-serif", weight: 'bold' }, color: '#6b7280' }, ticks: { display: false, min: 0 } } }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(17,24,39,0.9)', padding: 10, displayColors: false, callbacks: { label: ctx => `${ctx.parsed.r} Certificates` } } } }
+            });
+        }
+
+        let currentFilteredCertificates = [];
+
+        function filterCertificates() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sortOption = document.getElementById('sortSelect').value;
+
+            let filtered = allCertificates.filter(cert => {
+                const matchesSearch = (cert.title && cert.title.toLowerCase().includes(searchTerm)) ||
+                    (cert.issuer && cert.issuer.toLowerCase().includes(searchTerm)) ||
+                    (cert.tags && cert.tags.toLowerCase().includes(searchTerm));
+
+                let matchesCategory = true;
+                if (activeCategoryFilter !== 'All') {
+                    if (!cert.tags) matchesCategory = false;
+                    else {
+                        const certTags = cert.tags.split(',').map(t => t.trim().toLowerCase());
+                        matchesCategory = certTags.includes(activeCategoryFilter.toLowerCase());
+                    }
+                }
+                return matchesSearch && matchesCategory;
+            });
+
+            // Sorting Logic
+            if (sortOption === 'newest') {
+                filtered.sort((a, b) => b.id - a.id);
+            } else if (sortOption === 'oldest') {
+                filtered.sort((a, b) => a.id - b.id);
+            } else if (sortOption === 'name_asc') {
+                filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            } else if (sortOption === 'name_desc') {
+                filtered.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+            }
+
+            currentFilteredCertificates = filtered;
+            renderCertificates(filtered);
+            updateDashboard();
+            renderRadarChart();
+            renderCategoryFilters();
+        }
+
+        function exportToCSV() {
+            if (currentFilteredCertificates.length === 0) {
+                alert('No certificates available to export.');
+                return;
+            }
+
+            const headers = ['ID', 'Title', 'Issuer', 'Issue Date', 'Tags'];
+            const rows = currentFilteredCertificates.map(cert => [
+                cert.id,
+                `"${(cert.title || '').replace(/"/g, '""')}"`,
+                `"${(cert.issuer || '').replace(/"/g, '""')}"`,
+                `"${(cert.issue_date || '').replace(/"/g, '""')}"`,
+                `"${(cert.tags || '').replace(/"/g, '""')}"`
+            ]);
+
+            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.setAttribute("href", url);
+            link.setAttribute("download", "cerportal_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
 
         function renderCertificates(certificates) {
@@ -135,20 +494,36 @@
                         ? `<img src="${cert.image_url}" alt="Certificate Cover" class="h-48 w-full object-cover">`
                         : `<div class="h-48 bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-file-lines text-5xl text-gray-300"></i></div>`;
 
+                    let tagsHtml = '';
+                    if (cert.tags) {
+                        const tagArray = cert.tags.split(',').map(t => t.trim()).filter(t => t);
+                        if (tagArray.length > 0) {
+                            tagsHtml = `<div class="flex flex-wrap gap-1 mb-3 mt-1">`;
+                            tagArray.forEach(tag => {
+                                tagsHtml += `<span class="bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide cursor-pointer hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900 dark:hover:text-blue-300 transition-colors duration-200" onclick="setGlobalFilter('${tag}'); window.scrollTo({top:0,behavior:'smooth'});">${tag}</span>`;
+                            });
+                            tagsHtml += `</div>`;
+                        }
+                    }
+
                     htmlContent += `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col relative group">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col relative group transition-colors duration-200">
                         ${imageHtml}
                         <div class="p-6 flex flex-col flex-grow">
-                            <h2 class="text-xl font-bold text-gray-900 leading-tight mb-1 line-clamp-2">${cert.title}</h2>
-                            <p class="text-blue-600 font-medium text-sm mb-3">${cert.issuer}</p>
-                            <p class="text-gray-500 text-xs flex items-center mb-6">
+                            ${tagsHtml}
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-1 line-clamp-2">${cert.title}</h2>
+                            <p class="text-blue-600 dark:text-blue-400 font-medium text-sm mb-3">${cert.issuer}</p>
+                            <p class="text-gray-500 dark:text-gray-400 text-xs flex items-center mb-6">
                                 <i class="fa-regular fa-calendar mr-2"></i> Issued: ${cert.issue_date}
                             </p>
                             <div class="mt-auto flex space-x-2">
-                                <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition">
+                                <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200">
                                     <i class="fa-regular fa-eye mr-2"></i> View
                                 </a>
-                                <button onclick="deleteCertificate(${cert.id})" class="bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2.5 px-4 rounded-lg transition" title="ลบใบรับรองนี้">
+                                <button onclick="openEditModal(${cert.id})" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 dark:text-yellow-400 font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200" title="แก้ไขใบรับรอง">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="deleteCertificate(${cert.id})" class="bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200" title="ลบใบรับรองนี้">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -158,27 +533,65 @@
             }
 
             htmlContent += `
-            <div class="border-2 border-dashed border-gray-300 rounded-xl bg-transparent flex flex-col items-center justify-center p-8 text-center min-h-[400px] cursor-pointer hover:bg-gray-50 transition" onclick="openModal()">
-                <div class="bg-blue-50 p-4 rounded-full mb-4">
-                    <i class="fa-solid fa-plus text-3xl text-blue-600"></i>
+            <div class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-transparent flex flex-col items-center justify-center p-8 text-center min-h-[400px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200" onclick="openModal()">
+                <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-full mb-4">
+                    <i class="fa-solid fa-plus text-3xl text-blue-600 dark:text-blue-400"></i>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Add New Certificate</h3>
-                <p class="text-gray-500 text-sm">Upload a new document to your portal.</p>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Add New Certificate</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Upload a new document to your portal.</p>
             </div>`;
 
             grid.innerHTML = htmlContent;
         }
 
-        function openModal() { document.getElementById('addModal').classList.remove('hidden'); }
+        function openModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').innerText = 'Add New Certificate';
+            document.getElementById('submitBtn').innerText = 'Save Certificate';
+            document.getElementById('addCertForm').reset();
+            document.getElementById('certTags').value = '';
+            document.getElementById('certDocument').required = true;
+            document.getElementById('currentDocLink').classList.add('hidden');
+            document.getElementById('certLink').value = '';
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const cert = allCertificates.find(c => c.id === id);
+            if (!cert) return;
+            currentEditId = id;
+            document.getElementById('modalTitle').innerText = 'Edit Certificate';
+            document.getElementById('submitBtn').innerText = 'Update Certificate';
+
+            document.getElementById('certTitle').value = cert.title || '';
+            document.getElementById('certIssuer').value = cert.issuer || '';
+            document.getElementById('certDate').value = cert.issue_date || '';
+            document.getElementById('certTags').value = cert.tags || '';
+            document.getElementById('certLink').value = cert.cert_link || '';
+            document.getElementById('certDocument').required = false;
+
+            const docLink = document.getElementById('currentDocLink');
+            if (cert.cert_link) {
+                docLink.classList.remove('hidden');
+                docLink.querySelector('a').href = cert.cert_link;
+            } else {
+                docLink.classList.add('hidden');
+            }
+
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
         function closeModal() {
             document.getElementById('addModal').classList.add('hidden');
             document.getElementById('addCertForm').reset();
+            currentEditId = null;
         }
 
         async function submitForm(event) {
             event.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerHTML = 'Uploading...';
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = 'Saving...';
             submitBtn.disabled = true;
 
             try {
@@ -203,24 +616,59 @@
                     uploadedImageUrl = data.publicUrl;
                 }
 
-                const newCert = {
+                let uploadedDocUrl = null;
+                const docInput = document.getElementById('certDocument');
+
+                if (docInput.files.length > 0) {
+                    const docFile = docInput.files[0];
+                    const docExt = docFile.name.split('.').pop();
+                    const docFileName = `doc_${Math.random()}.${docExt}`;
+
+                    const { error: docUploadError } = await supabaseClient.storage
+                        .from('certificates')
+                        .upload(docFileName, docFile);
+
+                    if (docUploadError) throw docUploadError;
+
+                    const { data: docData } = supabaseClient.storage
+                        .from('certificates')
+                        .getPublicUrl(docFileName);
+
+                    uploadedDocUrl = docData.publicUrl;
+                }
+
+                const certData = {
                     title: document.getElementById('certTitle').value,
                     issuer: document.getElementById('certIssuer').value,
                     issue_date: document.getElementById('certDate').value,
-                    cert_link: document.getElementById('certLink').value,
-                    image_url: uploadedImageUrl
+                    tags: document.getElementById('certTags').value,
                 };
 
-                const { error: insertError } = await supabaseClient.from('certificates').insert([newCert]);
-                if (insertError) throw insertError;
+                if (uploadedDocUrl) {
+                    certData.cert_link = uploadedDocUrl;
+                } else if (document.getElementById('certLink').value) {
+                    certData.cert_link = document.getElementById('certLink').value;
+                }
+
+                if (uploadedImageUrl) {
+                    certData.image_url = uploadedImageUrl;
+                }
+
+                if (currentEditId) {
+                    const { error: updateError } = await supabaseClient.from('certificates').update(certData).eq('id', currentEditId);
+                    if (updateError) throw updateError;
+                } else {
+                    const { error: insertError } = await supabaseClient.from('certificates').insert([certData]);
+                    if (insertError) throw insertError;
+                }
 
                 closeModal();
                 fetchCertificates();
             } catch (error) {
-                console.error('Error adding certificate:', error);
+                console.error('Error saving certificate:', error);
                 alert('เกิดข้อผิดพลาด: ' + error.message);
             } finally {
-                submitBtn.innerHTML = 'Save Certificate';
+                submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
             }
         }
@@ -239,7 +687,8 @@
             }
         }
 
-        fetchCertificates();
+        // INITIALIZE APP BY CHECKING SESSION FIRST
+        checkAdminSession();
     </script>
 </body>
 
