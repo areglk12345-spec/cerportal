@@ -51,6 +51,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 </head>
 
 <body
@@ -370,9 +371,17 @@
 
             if (certificates && certificates.length > 0) {
                 certificates.forEach(cert => {
-                    const imageHtml = cert.image_url
+                    const isPdf = cert.cert_link && cert.cert_link.toLowerCase().endsWith('.pdf');
+                    let imageHtml = cert.image_url
                         ? `<img src="${cert.image_url}" alt="Certificate Cover" class="h-48 w-full object-cover">`
-                        : `<div class="h-48 bg-gray-100 flex items-center justify-center"><i class="fa-solid fa-file-lines text-5xl text-gray-300"></i></div>`;
+                        : `<div class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"><i class="fa-solid fa-file-lines text-5xl text-gray-300"></i></div>`;
+
+                    if (isPdf && !cert.image_url) {
+                        imageHtml = `<div class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                            <canvas id="pdf-canvas-${cert.id}" class="w-full h-full object-cover"></canvas>
+                            <i id="pdf-icon-${cert.id}" class="fa-solid fa-file-pdf text-5xl text-red-500 absolute"></i>
+                        </div>`;
+                    }
 
                     let tagsHtml = '';
                     if (cert.tags) {
@@ -400,6 +409,9 @@
                                 <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-brand hover:opacity-90 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200">
                                     <i class="fa-regular fa-eye mr-2"></i> View Certificate
                                 </a>
+                                <button onclick="downloadCertificate('${cert.cert_link}', '${cert.title}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200" title="ดาวน์โหลดไฟล์">
+                                    <i class="fa-solid fa-download"></i>
+                                </button>
                             </div>
                         </div>
                     </div>`;
@@ -409,6 +421,22 @@
             }
 
             grid.innerHTML = htmlContent;
+
+            // Render PDF Thumbnails
+            if (certificates) {
+                certificates.forEach(cert => {
+                    const isPdf = cert.cert_link && cert.cert_link.toLowerCase().endsWith('.pdf');
+                    if (isPdf && !cert.image_url) {
+                        const canvas = document.getElementById(`pdf-canvas-${cert.id}`);
+                        const icon = document.getElementById(`pdf-icon-${cert.id}`);
+                        if (canvas) {
+                            renderPDFThumbnail(cert.cert_link, canvas).then(() => {
+                                if (icon) icon.classList.add('hidden');
+                            });
+                        }
+                    }
+                });
+            }
         }
 
         async function logPageView() {
@@ -428,6 +456,39 @@
             const saved = localStorage.getItem('cerportal_accent');
             if (saved) document.documentElement.style.setProperty('--accent', saved);
         })();
+
+        // -------- PDF PREVIEW --------
+        async function renderPDFThumbnail(pdfUrl, canvas) {
+            if (!window.pdfjsLib) return;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+            try {
+                const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 0.5 });
+                canvas.width = viewport.width; canvas.height = viewport.height;
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+            } catch (e) { console.warn('PDF preview failed:', e); }
+        }
+
+        async function downloadCertificate(url, title) {
+            if (!url) return;
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                const extension = url.split('.').pop().split('?')[0] || 'pdf';
+                a.download = `${title.replace(/[/\\?%*:|"<>]/g, '-')}.${extension}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error('Download failed:', error);
+                window.open(url, '_blank');
+            }
+        }
 
         fetchCertificates();
     </script>

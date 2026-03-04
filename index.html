@@ -573,6 +573,9 @@
                                 <a href="${cert.cert_link}" target="_blank" class="flex-grow block text-center bg-brand hover:opacity-90 text-white font-semibold py-2.5 rounded-lg transition-colors duration-200">
                                     <i class="fa-regular fa-eye mr-2"></i> View
                                 </a>
+                                <button onclick="downloadCertificate('${cert.cert_link}', '${cert.title}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200" title="ดาวน์โหลดไฟล์">
+                                    <i class="fa-solid fa-download"></i>
+                                </button>
                                 <button onclick="openEditModal(${cert.id})" class="bg-yellow-50 hover:bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:hover:bg-yellow-900/50 dark:text-yellow-400 font-semibold py-2.5 px-4 rounded-lg transition-colors duration-200" title="แก้ไขใบรับรอง">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
@@ -816,6 +819,27 @@
                 canvas.width = viewport.width; canvas.height = viewport.height;
                 await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
             } catch (e) { console.warn('PDF preview failed:', e); }
+        }
+
+        async function downloadCertificate(url, title) {
+            if (!url) return;
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                const extension = url.split('.').pop().split('?')[0] || 'pdf';
+                a.download = `${title.replace(/[/\\?%*:|"<>]/g, '-')}.${extension}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error('Download failed:', error);
+                // Fallback to open in new tab
+                window.open(url, '_blank');
+            }
         }
     </script>
 
